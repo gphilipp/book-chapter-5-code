@@ -10,15 +10,15 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import com.google.gson.Gson;
 
-public class LoanHandler extends AbstractHandler {
+public class LoanHandler extends SuperHandler {
+
     public static final String APPLICATION = "apply";
     public static final String FETCH = "fetch";
     public static final String TICKET_ID = "ticketId";
-    public static final String APPROVE = "approve";
+    public static final String INCORRECT_PARAMETERS_PROVIDED = "Incorrect parameters provided";
 
     @Override
     public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response)
@@ -27,6 +27,10 @@ public class LoanHandler extends AbstractHandler {
         response.setStatus(HttpServletResponse.SC_OK);
         baseRequest.setHandled(true);
         PrintWriter writer = response.getWriter();
+        handleAction(request, writer);
+    }
+
+    void handleAction(HttpServletRequest request, PrintWriter writer) {
         try {
             if (isApplication(request)) {
                 LoanApplication application = new LoanApplication();
@@ -39,7 +43,7 @@ public class LoanHandler extends AbstractHandler {
             } else if (isApproval(request) && idSpecified(request)) {
                 writer.println(approveLoan(request.getParameter(TICKET_ID)));
             } else {
-                writer.println("Incorrect parameters provided");
+                writer.println(INCORRECT_PARAMETERS_PROVIDED);
             }
         } catch (ApplicationException e) {
             writer.println("Uh oh! Problem occured: " + e.getMessage());
@@ -52,14 +56,6 @@ public class LoanHandler extends AbstractHandler {
 
     private long amountFrom(HttpServletRequest request) {
         return Long.parseLong(request.getParameter("amount"));
-    }
-
-    private String approveLoan(String parameter) {
-        return new Gson().toJson(LoanRepository.approve(parameter));
-    }
-
-    private boolean isApproval(HttpServletRequest request) {
-        return APPROVE.equals(request.getParameter("action"));
     }
 
     private boolean idSpecified(HttpServletRequest request) {
@@ -99,5 +95,7 @@ public class LoanHandler extends AbstractHandler {
 
         return files == null ? 0 : files.length + 1;
     }
+
+
 
 }
